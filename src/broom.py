@@ -9,8 +9,8 @@ from functools import total_ordering
 from sklearn.model_selection import train_test_split
 import pandas as pd
 from datetime import datetime
-from string import ascii_lowercase
-import random
+import argparse
+import uuid
 
 
 RIBODATA = Path("../ribodata/")
@@ -71,11 +71,11 @@ def get_stats(seqs):
     return Seqstat(len=len(seqs), max=mx, min=mn, avg=avg)
 
 
-def prepare_df(riboswitches):
+def prepare_df(riboswitches, window):
     seq = []
     label = []
     for ribo in riboswitches:
-        seq.extend((apply_window(seq, WINDOW) for seq in ribo.seqs))
+        seq.extend((apply_window(seq, window) for seq in ribo.seqs))
         label.extend((ribo.label for _ in range(len(ribo))))
 
     df = pd.DataFrame({"label": label, "seq": seq})
@@ -101,22 +101,52 @@ def write_vorpal_test(df, filename):
             ans.write(f"{label}\n")
 
 
+def make_run_dir(now):
+    prefix = Path(now.strftime("wsrun_%d%m%Y%H%M%S"))
+
+    try:
+        prefix.mkdir()
+        return prefix
+    except FileExistsError:
+        pass
+
+    id = uuid.uuid4().hex
+    prefix = Path(f"wsrun_{id}")
+    print(f"moving to uuid instead: {id}", file=sys.stderr)
+    prefix.mkdir()
+    return prefix
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "-w", "--window", type=int, default=6,
+    )
+
+    parser.add_argument(
+        "-r", "--ribos", type=int, default=32,
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = get_args()
 
     date_time = datetime.now()
     date_time_readable = date_time.strftime("%d/%m/%Y, %H:%M:%S")
-    prefix = Path(date_time.strftime("wsrun_%d%m%Y%H%M%S"))
 
-    prefix.mkdir()
+    prefix = make_run_dir(date_time)
 
     ribos = [Riboclass(file) for file in RIBODATA.iterdir()]
     ribos.sort(reverse=True)
 
+    assert len(ribos) >= args.ribos
+
     for i, ribo in enumerate(ribos, start=1):
         ribo.label = i
 
-    riboclass_amount = 3
-    df = prepare_df(ribos[:riboclass_amount])
+    df = prepare_df(ribos[:args.ribos], args.window)
 
     train, test = train_test_split(df, test_size=0.2, random_state=SEED)
 
@@ -124,11 +154,11 @@ def main():
     write_vorpal_test(test, prefix / "testset")
 
     with open(prefix / "run_info", "w") as f:
-        f.write(f"{date_time}\nwindow: {WINDOW}\nRIBOS:\n")
-        for ribo in ribos[:riboclass_amount]:
+        f.write(f"{date_time}\nwindow:{WINDOW}\nRIBOS:{args.ribos}\n###\n")
+        for ribo in ribos[:args.ribos]:
             f.write(f"{ribo.tsvify()}\n")
 
-    print(prefix)
+    print(f"{args.ribos}\t{prefix}")
 
 
 if __name__ == "__main__":

@@ -11,6 +11,10 @@ class Count:
     def __repr__(self):
         return f"{self.correct}/{self.total}"
 
+    @property
+    def acc(self):
+        return self.correct / self.total
+
 def get_stats():
     with open("predictions", "r") as pred, open("testset_ans", "r") as ans:
         tracker = defaultdict(Count)
@@ -31,7 +35,7 @@ def main():
     for k, v in tracker.items():
         total += v.total
         correct += v.correct
-        print(k, v)
+        print(f"{k}\t{v}\t{v.acc}")
 
 
     print(f"acc: {correct/total}")
