@@ -1,20 +1,16 @@
 #!/usr/bin/sh
 
-
 cd $(dirname $0)
 
-IFS=-
-
-
 BROOMOUT=$(./broom.py "$@") || { echo "broom failed"; exit 1; }
-WINDOW=$(echo $BROOMOUT | cut -f1)
-OUTDIR=$(echo $BROOMOUT | cut -f2)
-
+RIBOS=$(echo $BROOMOUT | cut -f1 -d ' ')
+OUTDIR=$(echo $BROOMOUT | cut -f2 -d ' ')
 
 cd $OUTDIR
 
-vw --oaa $WINDOW trainset -f whichswitch.vw
+vw --oaa $RIBOS trainset -f whichswitch.vw
 vw -d testset -i whichswitch.vw -p predictions
 
 ../summary.py > summary
+echo "\n---summary---\n"
 cat summary

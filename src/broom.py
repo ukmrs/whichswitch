@@ -158,7 +158,7 @@ def main():
         for ribo in ribos[:args.ribos]:
             f.write(f"{ribo.tsvify()}\n")
 
-    print(f"{args.ribos}\t{prefix}")
+    print(f"{args.ribos} {prefix}")
 
 
 if __name__ == "__main__":
