@@ -11,6 +11,7 @@ cd $OUTDIR
 vw --oaa $RIBOS trainset -f whichswitch.vw
 vw -d testset -i whichswitch.vw -p predictions
 
-../summary.py > summary
+../summary.py -r $RIBOS > summary
+echo "\n---saved_in---\n$OUTDIR"
 echo "\n---summary---\n"
 cat summary

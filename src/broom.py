@@ -14,8 +14,6 @@ import uuid
 
 
 RIBODATA = Path("../ribodata/")
-WINDOW = 10
-AMOUNT = 3
 SEED = 8880
 
 Seqstat = namedtuple("Seqstat", ["len", "max", "min", "avg"])
@@ -148,13 +146,13 @@ def main():
 
     df = prepare_df(ribos[:args.ribos], args.window)
 
-    train, test = train_test_split(df, test_size=0.2, random_state=SEED)
+    train, test = train_test_split(df, test_size=0.25, random_state=SEED)
 
     write_vorpal_file(train, prefix / "trainset")
     write_vorpal_test(test, prefix / "testset")
 
     with open(prefix / "run_info", "w") as f:
-        f.write(f"{date_time}\nwindow:{WINDOW}\nRIBOS:{args.ribos}\n###\n")
+        f.write(f"date={date_time}\nwindow={args.window}\nribos={args.ribos}\n###\n")
         for ribo in ribos[:args.ribos]:
             f.write(f"{ribo.tsvify()}\n")
 
