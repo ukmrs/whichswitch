@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import argparse
 
+import uuid
+
 
 def get_y_true_pred():
     with open("predictions", "r") as pred, open("testset_ans", "r") as ans:
@@ -44,16 +46,17 @@ def get_args():
     return parser.parse_args()
 
 
-
-
 def main():
     args = get_args()
     ytrue, ypred = get_y_true_pred()
 
     create_confusion_plot(ytrue, ypred, args.ribos)
-    report = metrics.classification_report(ytrue, ypred)
+    target_names = [uuid.uuid4().hex for i in range(args.ribos)]
+    report = metrics.classification_report(ytrue, ypred, target_names=target_names)
+    cohen = metrics.cohen_kappa_score(ytrue, ypred)
 
     print(report)
+    print(f"Cohen's Kappa score: {cohen}")
 
 
 if __name__ == "__main__":

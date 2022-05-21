@@ -9,25 +9,27 @@ from functools import total_ordering
 from sklearn.model_selection import train_test_split
 import pandas as pd
 from datetime import datetime
+from typing import Optional
 import argparse
 import uuid
 
 
 RIBODATA = Path("../ribodata/")
 SEED = 8880
-
 Seqstat = namedtuple("Seqstat", ["len", "max", "min", "avg"])
 
 
 @total_ordering
 class Riboclass:
     counter = 1
+    header = "label\trf\tname\tlength\tmax\tmin\tavg\n"
 
     def __init__(self, file):
         self.label = Riboclass.counter
         Riboclass.counter += 1
         self.file = file
-        self.name = file.stem.split(".")[0]
+        self.rf = file.stem.split(".")[0]
+        self.name: Optional[str] = None
         self.seqs = get_seqs(file)
         self.stats = get_stats(self.seqs)
 
@@ -45,7 +47,7 @@ class Riboclass:
 
     def tsvify(self):
         ln, mx, mn, avg = self.stats
-        return f"{self.name}\t{self.label}\t{ln}\t{mx}\t{mn}\t{avg}"
+        return f"{self.label}\t{self.rf}\t{self.name}\t{ln}\t{mx}\t{mn}\t{avg}"
 
 
 def get_seqs(file):
@@ -136,15 +138,19 @@ def main():
 
     prefix = make_run_dir(date_time)
 
-    ribos = [Riboclass(file) for file in RIBODATA.iterdir()]
+    ribos = [Riboclass(f) for f in RIBODATA.iterdir() if f.suffix == ".fa"]
     ribos.sort(reverse=True)
 
-    assert len(ribos) >= args.ribos
+    assert len(ribos) >= args.ribos, "there aren't that many riboswitches files"
 
-    for i, ribo in enumerate(ribos, start=1):
-        ribo.label = i
+    with open(RIBODATA / "ribolist.info", "r") as info:
+        gen = (line.rstrip().split("\t") for line in info.readlines())
+        ribotable = {k: v for k, v in gen}
+        for i, ribo in enumerate(ribos, start=1):
+            ribo.label = i
+            ribo.name = ribotable[ribo.rf]
 
-    df = prepare_df(ribos[:args.ribos], args.window)
+    df = prepare_df(ribos[: args.ribos], args.window)
 
     train, test = train_test_split(df, test_size=0.25, random_state=SEED)
 
@@ -152,8 +158,11 @@ def main():
     write_vorpal_test(test, prefix / "testset")
 
     with open(prefix / "run_info", "w") as f:
-        f.write(f"date={date_time}\nwindow={args.window}\nribos={args.ribos}\n###\n")
-        for ribo in ribos[:args.ribos]:
+        f.write(
+            f"date={date_time_readable}\nwindow={args.window}\nribos={args.ribos}\n###\n"
+        )
+        f.write(Riboclass.header)
+        for ribo in ribos[: args.ribos]:
             f.write(f"{ribo.tsvify()}\n")
 
     print(prefix)

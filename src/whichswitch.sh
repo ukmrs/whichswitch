@@ -18,8 +18,9 @@ outdir=$(./broom.py -r $ribos -w $window) || { echo "broom failed"; exit 1; }
 
 cd $outdir
 
-vw --oaa $ribos trainset -f whichswitch.vw
-vw -d testset -i whichswitch.vw -p predictions
+vw --oaa $ribos trainset -f whichswitch.vw 
+vw -d testset -i whichswitch.vw -p predictions 
+
 
 ../summary.py -r $ribos > summary
 echo "\n---saved_in---\n$outdir"
