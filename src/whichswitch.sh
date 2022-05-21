@@ -2,16 +2,26 @@
 
 cd $(dirname $0)
 
-BROOMOUT=$(./broom.py "$@") || { echo "broom failed"; exit 1; }
-RIBOS=$(echo $BROOMOUT | cut -f1 -d ' ')
-OUTDIR=$(echo $BROOMOUT | cut -f2 -d ' ')
+ribos=32
+window=6
 
-cd $OUTDIR
+while getopts "w:?r:?" opt; do
+  case "$opt" in
+    r)  ribos=$OPTARG
+      ;;
+    w)  window=$OPTARG
+      ;;
+  esac
+done
 
-vw --oaa $RIBOS trainset -f whichswitch.vw
+outdir=$(./broom.py -r $ribos -w $window) || { echo "broom failed"; exit 1; }
+
+cd $outdir
+
+vw --oaa $ribos trainset -f whichswitch.vw
 vw -d testset -i whichswitch.vw -p predictions
 
-../summary.py -r $RIBOS > summary
-echo "\n---saved_in---\n$OUTDIR"
+../summary.py -r $ribos > summary
+echo "\n---saved_in---\n$outdir"
 echo "\n---summary---\n"
 cat summary

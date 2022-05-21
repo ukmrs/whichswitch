@@ -44,18 +44,16 @@ def get_args():
     return parser.parse_args()
 
 
+
+
 def main():
     args = get_args()
     ytrue, ypred = get_y_true_pred()
-    create_confusion_plot(ytrue, ypred, args.ribos)
-    avg = "macro"
-    acc = metrics.accuracy_score(ytrue, ypred)
-    recall = metrics.recall_score(ytrue, ypred, average=avg)
-    precision = metrics.precision_score(ytrue, ypred, average=avg)
 
-    print(f"{acc=}")
-    print(f"{recall=}")
-    print(f"{precision=}")
+    create_confusion_plot(ytrue, ypred, args.ribos)
+    report = metrics.classification_report(ytrue, ypred)
+
+    print(report)
 
 
 if __name__ == "__main__":

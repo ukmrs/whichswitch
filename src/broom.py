@@ -119,11 +119,11 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "-w", "--window", type=int, default=6,
+        "-w", "--window", type=int,
     )
 
     parser.add_argument(
-        "-r", "--ribos", type=int, default=32,
+        "-r", "--ribos", type=int,
     )
     return parser.parse_args()
 
@@ -156,7 +156,7 @@ def main():
         for ribo in ribos[:args.ribos]:
             f.write(f"{ribo.tsvify()}\n")
 
-    print(f"{args.ribos} {prefix}")
+    print(prefix)
 
 
 if __name__ == "__main__":
