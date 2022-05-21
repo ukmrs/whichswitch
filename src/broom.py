@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import sys
+import random
 import itertools
 from collections import namedtuple
 from pprint import pprint
@@ -15,17 +16,16 @@ import uuid
 
 
 RIBODATA = Path("../ribodata/")
-SEED = 8880
 Seqstat = namedtuple("Seqstat", ["len", "max", "min", "avg"])
 
 
 @total_ordering
 class Riboclass:
     counter = 1
-    header = "label\trf\tname\tlength\tmax\tmin\tavg\n"
+    header = "id\trf\tname\tlength\tmax\tmin\tavg\n"
 
     def __init__(self, file):
-        self.label = Riboclass.counter
+        self.id = Riboclass.counter
         Riboclass.counter += 1
         self.file = file
         self.rf = file.stem.split(".")[0]
@@ -34,7 +34,7 @@ class Riboclass:
         self.stats = get_stats(self.seqs)
 
     def __repr__(self):
-        return f"{self.name} ({self.label}): {self.stats}"
+        return f"{self.name} ({self.id}): {self.stats}"
 
     def __len__(self):
         return self.stats.len
@@ -47,7 +47,7 @@ class Riboclass:
 
     def tsvify(self):
         ln, mx, mn, avg = self.stats
-        return f"{self.label}\t{self.rf}\t{self.name}\t{ln}\t{mx}\t{mn}\t{avg}"
+        return f"{self.id}\t{self.rf}\t{self.name}\t{ln}\t{mx}\t{mn}\t{avg}"
 
 
 def get_seqs(file):
@@ -76,7 +76,7 @@ def prepare_df(riboswitches, window):
     label = []
     for ribo in riboswitches:
         seq.extend((apply_window(seq, window) for seq in ribo.seqs))
-        label.extend((ribo.label for _ in range(len(ribo))))
+        label.extend((ribo.id for _ in range(len(ribo))))
 
     df = pd.DataFrame({"label": label, "seq": seq})
 
@@ -127,6 +127,11 @@ def get_args():
     parser.add_argument(
         "-r", "--ribos", type=int,
     )
+
+    parser.add_argument(
+        "-s", "--seed",
+    )
+
     return parser.parse_args()
 
 
@@ -147,19 +152,25 @@ def main():
         gen = (line.rstrip().split("\t") for line in info.readlines())
         ribotable = {k: v for k, v in gen}
         for i, ribo in enumerate(ribos, start=1):
-            ribo.label = i
+            ribo.id = i
             ribo.name = ribotable[ribo.rf]
 
     df = prepare_df(ribos[: args.ribos], args.window)
 
-    train, test = train_test_split(df, test_size=0.25, random_state=SEED)
+    try:
+        seed = int(args.seed)
+    except ValueError:
+        seed = random.randint(0, 0xFFFFFFFF)
+
+    train, test = train_test_split(df, test_size=0.25, random_state=seed)
 
     write_vorpal_file(train, prefix / "trainset")
     write_vorpal_test(test, prefix / "testset")
 
     with open(prefix / "run_info", "w") as f:
         f.write(
-            f"date={date_time_readable}\nwindow={args.window}\nribos={args.ribos}\n###\n"
+                f"date={date_time_readable}\nwindow={args.window}"
+                f"\nribos={args.ribos}\nseed={seed}\n###\n"
         )
         f.write(Riboclass.header)
         for ribo in ribos[: args.ribos]:

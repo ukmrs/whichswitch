@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import argparse
 
-import uuid
-
 
 def get_y_true_pred():
     with open("predictions", "r") as pred, open("testset_ans", "r") as ans:
@@ -24,14 +22,14 @@ def create_confusion_plot(ytrue, ypred, ribos):
 
     ax.imshow(normalized, cmap="viridis")
 
-    labels = [i for i in range(1, ribos + 1)]
+    ids = [i for i in range(1, ribos + 1)]
 
     # Show all ticks and label them with the respective list entries
-    ax.set_xticks(np.arange(len(labels)), labels)
-    ax.set_yticks(np.arange(len(labels)), labels)
+    ax.set_xticks(np.arange(len(ids)), ids)
+    ax.set_yticks(np.arange(len(ids)), ids)
 
-    for i in range(len(labels)):
-        for j in range(len(labels)):
+    for i in range(len(ids)):
+        for j in range(len(ids)):
             text = ax.text(j, i, cm[i, j], ha="center", va="center", color="grey")
 
     ax.set_title("confusion_matrix")
@@ -51,8 +49,7 @@ def main():
     ytrue, ypred = get_y_true_pred()
 
     create_confusion_plot(ytrue, ypred, args.ribos)
-    target_names = [uuid.uuid4().hex for i in range(args.ribos)]
-    report = metrics.classification_report(ytrue, ypred, target_names=target_names)
+    report = metrics.classification_report(ytrue, ypred)
     cohen = metrics.cohen_kappa_score(ytrue, ypred)
 
     print(report)

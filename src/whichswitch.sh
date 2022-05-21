@@ -4,17 +4,21 @@ cd $(dirname $0)
 
 ribos=32
 window=6
+seed=607251537
+# seed='random'
 
-while getopts "w:?r:?" opt; do
+while getopts "w:?r:?s:?" opt; do
   case "$opt" in
     r)  ribos=$OPTARG
       ;;
     w)  window=$OPTARG
       ;;
+    s)  seed=$OPTARG
+      ;;
   esac
 done
 
-outdir=$(./broom.py -r $ribos -w $window) || { echo "broom failed"; exit 1; }
+outdir=$(./broom.py -r $ribos -w $window -s $seed) || { echo "broom failed"; exit 1; }
 
 cd $outdir
 
